@@ -3,28 +3,32 @@ import transform_data
 import sqlite3
 
 def main():
+    db_name = 'transactions.db'
+    transactions_table = 'transactions'
+    stations_table = 'stations'
 
-    build_transactions_table()
+    build_transactions_table(db_name, transactions_table)
 
-    build_stations_table()
+    build_stations_table(db_name, transactions_table, stations_table)
 
-def build_transactions_table():
+def build_transactions_table(db_name, transactions_table):
     # Load and clean the data
     df = pd.read_csv("data.csv", sep=";")
     df = transform_data.clean_data(df)
     
     # Place data into SQLite database
-    pandas_to_sqlite(df, 'transactions', 'transactions.db')
+    pandas_to_sqlite(df, transactions_table, db_name)
 
-def build_stations_table():
+def build_stations_table(db_name,transactions_table='transactions', stations_table='stations'):
+    
     # Add stations table
-    create_stations_table('transactions', 'transactions.db', 'stations')
+    create_stations_table(transactions_table, db_name, stations_table)
 
     # Add chreck-ins and check-outs to stations table
-    add_check_ins_and_outs('transactions.db', 'transactions' ,'stations')
+    add_check_ins_and_outs(db_name, transactions_table ,stations_table)
 
     #add transaction count
-    add_transaction_numbers_to_stations_table('transactions.db', 'stations')
+    add_transaction_numbers_to_stations_table(db_name, stations_table)
 
 def add_transaction_numbers_to_stations_table(db_file, stations_table):
     """
@@ -95,9 +99,6 @@ def create_stations_table(source_table, db_file, stations_table='stations'):
     stations_df.to_sql(stations_table, conn, if_exists='replace', index=False)
     conn.close()
     print(f"Stations table '{stations_table}' created in {db_file}.")
-
-# Example usage:
-# create_stations_table('transactions', 'your_database.db')
 
 if __name__ == "__main__":
     main()
