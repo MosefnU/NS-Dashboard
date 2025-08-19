@@ -1,20 +1,17 @@
 import pandas as pd
 import transform_data
-import database_builder
 
 def main():
 
     # Load and clean the data
     df = pd.read_csv("data.csv", sep=";")
     df = transform_data.clean_data(df)
-
-    print(df.tail())
     
     # Place data into SQLite database
-    database_builder.pandas_to_sqlite(df, 'transactions', 'transactions.db')
+    pandas_to_sqlite(df, 'transactions', 'transactions.db')
 
     # Add stations table
-    database_builder.create_stations_table('transactions', 'transactions.db')
+    create_stations_table('transactions', 'transactions.db')
 
 def pandas_to_sqlite(df, table_name, db_file):
     """
