@@ -8,11 +8,14 @@ def main():
     df = pd.read_csv("data.csv", sep=";")
     df = transform_data.clean_data(df)
 
-    print(df.head())
+    print(df.tail())
     print(df.columns)
     
     # Place data into SQLite database
     database_builder.pandas_to_sqlite(df, 'transactions', 'transactions.db')
+
+    # Add stations table
+    database_builder.create_stations_table('transactions', 'transactions.db')
 
 def top_ten_stations(df):
     """

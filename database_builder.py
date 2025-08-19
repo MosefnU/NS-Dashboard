@@ -4,16 +4,6 @@ import pandas as pd
 def main():
     pass
 
-def new_sqlite_db(db_file):
-    """
-    Create a new SQLite database file.
-    
-    :param db_file: The name of the SQLite database file to create.
-    """
-    conn = sqlite3.connect(db_file)
-    conn.close()
-    print(f"Database {db_file} created successfully.")
-
 def pandas_to_sqlite(df, table_name, db_file):
     """
     Save a pandas DataFrame to a SQLite database table.
@@ -26,6 +16,23 @@ def pandas_to_sqlite(df, table_name, db_file):
     df.to_sql(table_name, conn, if_exists='replace', index=False)
     conn.close()
     print(f"DataFrame saved to {table_name} in {db_file}.")
+
+def create_stations_table(source_table, db_file, stations_table='stations'):
+    """
+    Create a stations table with unique station_id and station_name from transactions.
+    """
+    conn = sqlite3.connect(db_file)
+
+    # Extract unique stations
+    query = f"SELECT DISTINCT station FROM {source_table}"
+    stations_df = pd.read_sql_query(query, conn)
+    # Save to new table
+    stations_df.to_sql(stations_table, conn, if_exists='replace', index=False)
+    conn.close()
+    print(f"Stations table '{stations_table}' created in {db_file}.")
+
+# Example usage:
+# create_stations_table('transactions', 'your_database.db')
 
 if __name__ == "__main__":
     main()

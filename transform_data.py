@@ -47,7 +47,7 @@ def stations_to_lowercase(df):
     :param df: DataFrame containing the data.
     :return: DataFrame with the '~STATION' columns in lowercase.
     """
-    df['STATION '] = df['STATION'].str.lower()
+    df['STATION'] = df['STATION'].str.lower()
     df['HEENREIS VERTREKSTATION'] = df['HEENREIS VERTREKSTATION'].str.lower()
     df['TERUGREIS VERTREKSTATION'] = df['TERUGREIS VERTREKSTATION'].str.lower()
     df['HEENREIS AANKOMSTSTATION'] = df['HEENREIS AANKOMSTSTATION'].str.lower()
