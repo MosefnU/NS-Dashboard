@@ -1,8 +1,20 @@
-import sqlite3
 import pandas as pd
+import transform_data
+import database_builder
 
 def main():
-    pass
+
+    # Load and clean the data
+    df = pd.read_csv("data.csv", sep=";")
+    df = transform_data.clean_data(df)
+
+    print(df.tail())
+    
+    # Place data into SQLite database
+    database_builder.pandas_to_sqlite(df, 'transactions', 'transactions.db')
+
+    # Add stations table
+    database_builder.create_stations_table('transactions', 'transactions.db')
 
 def pandas_to_sqlite(df, table_name, db_file):
     """
@@ -24,7 +36,7 @@ def create_stations_table(source_table, db_file, stations_table='stations'):
     conn = sqlite3.connect(db_file)
 
     # Extract unique stations
-    query = f"SELECT DISTINCT station FROM {source_table}"
+    query = f"SELECT DISTINCT [station id], station FROM {source_table}"
     stations_df = pd.read_sql_query(query, conn)
     # Save to new table
     stations_df.to_sql(stations_table, conn, if_exists='replace', index=False)
