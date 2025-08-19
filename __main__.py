@@ -1,5 +1,6 @@
 import pandas as pd
 import transform_data
+import database_builder
 
 def main():
 
@@ -7,8 +8,8 @@ def main():
     df = transform_data.clean_data(df)
     print(df.head())
     print(df.columns)
-    counts = df.value_counts("STATION")
-    print(counts)
+    
+    database_builder.pandas_to_sqlite(df, 'transactions', 'transactions.db')
 
 def top_ten_stations(df):
     """
