@@ -16,6 +16,18 @@ def clean_data(df):
     """
     df = clean_column_names(df)
     df = stations_to_lowercase(df)
+    df = drop_unnecessary_columns(df)
+    return df
+
+def drop_unnecessary_columns(df):
+    """
+    Drops unnecessary columns from the DataFrame.
+    
+    :param df: DataFrame containing the data.
+    :return: DataFrame with unnecessary columns dropped.
+    """
+    columns_to_drop = ['VERVOERDER ID', 'VERVOERDER', 'DISCLAMER']
+    df.drop(columns=columns_to_drop, inplace=True, errors='ignore')
     return df
 
 def clean_column_names(df):
