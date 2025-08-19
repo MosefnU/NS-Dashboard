@@ -38,10 +38,17 @@ def add_transaction_numbers_to_stations_table(db_file, stations_table):
     cursor = conn.cursor()
     cursor.execute(f"""
         ALTER TABLE [{stations_table}]
-        ADD COLUMN transaction_count INTEGER;
+        ADD COLUMN transaction_count INTEGER DEFAULT 0;
+            """)
+    cursor.execute(f"""
+        ALTER TABLE [{stations_table}]
+        ADD COLUMN passenger_count INTEGER DEFAULT 0;
             """)
     cursor.execute(f"""
                    UPDATE [{stations_table}] SET transaction_count = check_ins + check_outs;
+                   """)
+    cursor.execute(f"""
+                   UPDATE [{stations_table}] SET passenger_count = passengers_in + passengers_out;
                    """)
     conn.commit()
     conn.close()
@@ -52,6 +59,7 @@ def add_check_ins_and_outs(db_file, source_table, target_table):
     Count the number of occurrences of each station in the transactions table.
     """
     conn = sqlite3.connect(db_file)
+
     query = f"""
         SELECT station,
             (
@@ -61,7 +69,15 @@ def add_check_ins_and_outs(db_file, source_table, target_table):
             (
                 SELECT COUNT(station) FROM {source_table} t3
                 WHERE richting='unpaid' AND t3.station = t1.station
-                ) AS check_outs
+                ) AS check_outs,
+            (
+                SELECT COUNT(station) * [aantal passagiers] FROM {source_table} t2
+                WHERE richting='paid' AND t2.station = t1.station AND [aantal passagiers] IS NOT NULL
+                ) AS passengers_in,
+            (
+                SELECT COUNT(station) * [aantal passagiers] FROM {source_table} t3
+                WHERE richting='unpaid' AND t3.station = t1.station AND [aantal passagiers] IS NOT NULL
+                ) AS passengers_out
         FROM {target_table} t1
         WHERE station IS NOT NULL
         AND station != '0'
