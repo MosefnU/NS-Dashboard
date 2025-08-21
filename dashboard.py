@@ -1,6 +1,7 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
+import matplotlib.pyplot as plt
 
 
     
@@ -15,6 +16,12 @@ query = f"""
     SELECT * FROM stations
 """
 stations_df = pd.read_sql_query(query, conn)
+
+# Haal de reizen op
+query = f"""
+    SELECT * FROM journeys
+"""
+journeys_df = pd.read_sql_query(query, conn)
 conn.close()
 
 # Filter stations buiten NL eruit
@@ -30,6 +37,32 @@ reizen, reis_in, reis_uit = st.columns(3)
 reizen.metric(label="Aantal reizen", value=aantal_reizen, delta=None, delta_color="normal")
 reis_in.metric(label="Aantal check-ins", value=aantal_check_ins, delta=None, delta_color="normal")
 reis_uit.metric(label="Aantal check-uits", value=aantal_check_outs, delta=(aantal_check_outs-aantal_check_ins), delta_color="normal")
+
+## Toon reizen in Nederland 2
+aantal_reizen = journeys_df.shape[0]
+query = f"check_in != '0' and check_in not in {stations_buiten_nl} and check_uit != 0 and check_uit not in {stations_buiten_nl}"
+aantal_reizen_NL = journeys_df.query(query).shape[0]
+query = f"(check_in != '0' and check_in in {stations_buiten_nl} and check_uit != '0' and check_uit not in {stations_buiten_nl}) or (check_in != '0' and check_in not in {stations_buiten_nl} and check_uit != '0' and check_uit in {stations_buiten_nl})"
+aantal_reizen_grensoverschrijdend = journeys_df.query(query).shape[0]
+
+st.subheader("Reizen in Nederland en internationaal")
+reizen, reis_in, reis_uit = st.columns(3)
+reizen.metric(label="Aantal reizen", value=aantal_reizen, delta=None, delta_color="normal")
+reis_in.metric(label="Waarvan binnenland", value=aantal_reizen_NL, delta=None, delta_color="normal")
+reis_uit.metric(label="Waarvan internationaal", value=aantal_reizen_grensoverschrijdend, delta=None, delta_color="normal")
+
+
+values = [aantal_reizen_NL, aantal_reizen_grensoverschrijdend]
+labels = ['Binnenland', 'Internationaal']
+colors = [ '#FFB347','#87CEEB']
+
+fig, ax = plt.subplots()
+ax.pie(values, labels=labels, colors=colors, startangle=90, wedgeprops={'width':0.4},autopct='%1.0f')
+ax.set(aspect="equal")
+
+plt.title("Verdeling reizen")
+
+st.pyplot(fig)
     
 
 # # Toon top 10 drukste stations in Nederland
