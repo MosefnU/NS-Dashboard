@@ -29,13 +29,13 @@ st.subheader("1. Reizen in Nederland")
 reizen, reis_in, reis_uit = st.columns(3)
 reizen.metric(label="Aantal reizen", value=aantal_reizen, delta=None, delta_color="normal")
 reis_in.metric(label="Aantal check-ins", value=aantal_check_ins, delta=None, delta_color="normal")
-reis_uit.metric(label="Aantal check-outs", value=aantal_check_outs, delta=(aantal_check_outs-aantal_check_ins), delta_color="normal")
+reis_uit.metric(label="Aantal check-uits", value=aantal_check_outs, delta=(aantal_check_outs-aantal_check_ins), delta_color="normal")
     
 
 # # Toon top 10 drukste stations in Nederland
-st.subheader("2. Top drukste stations in Nederland")
+st.subheader("2. De drukste stations in Nederland")
 topx = st.slider("Aantal stations", 1, 100, 10, on_change=None)
-st.write(f"Top {topx} drukste stations in Nederland gebaseerd op het aantal reizigers op het aantal check-ins en check-outs.")
+st.write(f"De {topx} drukste stations in Nederland gebaseerd op het aantal reizigers op het aantal check-ins en check-outs.")
 stations_nl_df.sort_values(by='passenger_count', ascending=False, inplace=True)
 
 station_table_data = []
