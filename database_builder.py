@@ -21,22 +21,31 @@ def build_journeys_table(db_name, journeys_table='journeys'):
     """
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
+    # --FULL JOINS zijn niet ondersteund in SQLite, dus we gebruiken LEFT JOIN
+    # --Dit betekent dat journeys met alleen een check-out worden opgeslagen
+    # -- als journey met alleen een check-in.
     query = f"""
-        SELECT A.[ticket id] AS TicketID,
-       A.station AS check_in,
-       B.station AS check_uit,
-       A.[HEENREIS VERTREKSTATION],
-       A.[HEENREIS AANKOMSTSTATION],
-       A.[TERUGREIS VERTREKSTATION],
-       A.[TERUGREIS AANKOMSTSTATION]
-       FROM transactions A, transactions B
-       WHERE
-       A.[ticket id] = B.[ticket id]
-       AND A.richting = 'unpaid'
-       AND B.richting = 'paid'
-       AND A.station <> '0'
-       AND B.station <> '0'
-       ORDER BY A.[TICKET ID], A.[HEENREIS VERTREKSTATION] ASC;
+    SELECT 
+        A.[ticket id] AS TicketID,
+        A.station AS check_in,
+        B.station AS check_uit,
+        A.[HEENREIS VERTREKSTATION],
+        A.[HEENREIS AANKOMSTSTATION],
+        A.[TERUGREIS VERTREKSTATION],
+        A.[TERUGREIS AANKOMSTSTATION],
+        A.[Ticket type] AS ticket_type
+    FROM transactions A
+    LEFT JOIN transactions B
+        ON A.[ticket id] = B.[ticket id]
+        AND A.richting <> B.richting
+        AND B.[Ticket type] <> 'B'
+    WHERE A.richting = 'unpaid'
+        OR NOT EXISTS (
+            SELECT 1
+            FROM transactions C
+            WHERE C.[ticket id] = A.[ticket id] AND C.richting = 'unpaid'
+        )
+    ORDER BY A.[ticket id], A.[HEENREIS VERTREKSTATION] ASC;
             """
     journeys_df = pd.read_sql_query(query, conn)
     
@@ -147,6 +156,7 @@ def pandas_to_sqlite(df, table_name, db_file):
     conn = sqlite3.connect(db_file)
     df.to_sql(table_name, conn, if_exists='replace', index=False)
     conn.close()
+
     print(f"DataFrame saved to {table_name} in {db_file}.")
 
 def create_stations_table(source_table, db_file, stations_table='stations'):
