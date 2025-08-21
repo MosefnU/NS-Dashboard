@@ -6,10 +6,57 @@ def main():
     db_name = 'transactions.db'
     transactions_table = 'transactions'
     stations_table = 'stations'
+    journeys_table = 'journeys'
 
-    build_transactions_table(db_name, transactions_table)
+    #build_transactions_table(db_name, transactions_table)
 
-    build_stations_table(db_name, transactions_table, stations_table)
+    #build_stations_table(db_name, transactions_table, stations_table)
+
+    build_journeys_table(db_name, journeys_table)
+
+def build_journeys_table(db_name, journeys_table='journeys'):
+    """
+    Build a journeys table from the transactions data.
+    This function is currently a placeholder and does not implement any logic.
+    """
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    query = f"""
+        SELECT A.[ticket id] AS TicketID,
+       A.station AS check_in,
+       B.station AS check_uit,
+       A.[HEENREIS VERTREKSTATION],
+       A.[HEENREIS AANKOMSTSTATION],
+       A.[TERUGREIS VERTREKSTATION],
+       A.[TERUGREIS AANKOMSTSTATION]
+       FROM transactions A, transactions B
+       WHERE
+       A.[ticket id] = B.[ticket id]
+       AND A.richting = 'unpaid'
+       AND B.richting = 'paid'
+       AND A.station <> '0'
+       AND B.station <> '0'
+       ORDER BY A.[TICKET ID], A.[HEENREIS VERTREKSTATION] ASC;
+            """
+    journeys_df = pd.read_sql_query(query, conn)
+    
+   # Voeg een kolom toe om aan te geven of de reis compleet is
+    journeys_df['comlpete journey'] = ((
+        # De reis is compleet als de check-in en check-out overeenkomen met de heenreis of terugreis
+        # Dwz de check in is gelijk aan het vertrekstation van de heenreis of terugreis
+        # en de check out is gelijk aan het aankomststation van de heenreis of terugreis.
+            (journeys_df['check_in'] == journeys_df['HEENREIS VERTREKSTATION'])
+        & (journeys_df['check_uit'] == journeys_df['HEENREIS AANKOMSTSTATION'])
+        ) | (
+            (journeys_df['check_in'] == journeys_df['TERUGREIS VERTREKSTATION'])
+        & (journeys_df['check_uit'] == journeys_df['TERUGREIS AANKOMSTSTATION'])
+        ))
+        
+    conn.close()
+    
+    pandas_to_sqlite(journeys_df, journeys_table, db_name)
+    print(f"Building {journeys_table} table in {db_name} completed.")
+    
 
 def build_transactions_table(db_name, transactions_table):
     # Load and clean the data
