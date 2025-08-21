@@ -55,15 +55,18 @@ aantal_reizen_grensoverschrijdend = journeys_df.query(query).shape[0]
 
 
 st.subheader("1. Reizen in Nederland en internationaal")
+
 reizen, reis_in, reis_uit = st.columns(3)
 reizen.metric(label="Aantal reizen", value=aantal_reizen, delta=None, delta_color="normal")
 reis_in.metric(label="Waarvan binnenland", value=aantal_reizen_NL, delta=None, delta_color="normal")
 reis_uit.metric(label="Waarvan internationaal", value=aantal_reizen_grensoverschrijdend, delta=None, delta_color="normal")
-
+reisnummer, reisweergave = st.columns(2)
 
 values = [aantal_reizen_NL, aantal_reizen_grensoverschrijdend]
 labels = ['Binnenland', 'Internationaal']
 colors = [ '#FFB347','#87CEEB']
+
+reisnummer.write(f"Van de {aantal_reizen} reizen zijn er {aantal_reizen_NL} reizen volledig binnen Nederland en {aantal_reizen_grensoverschrijdend} internationale reizen.")
 
 fig, ax = plt.subplots()
 ax.pie(values, labels=labels, colors=colors, startangle=90, wedgeprops={'width':0.4},autopct='%1.0f')
@@ -71,7 +74,7 @@ ax.set(aspect="equal")
 
 plt.title("Verdeling reizen")
 
-st.pyplot(fig)
+reisweergave.pyplot(fig)
 
 # # Toon de lopers
 st.subheader("2. Gebruik stations als looproute")
