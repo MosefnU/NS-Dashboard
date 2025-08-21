@@ -42,11 +42,17 @@ stations_nl_df = stations_df.query(f"STATION != '0' and STATION not in {stations
 # reis_uit.metric(label="Aantal check-uits", value=aantal_check_outs, delta=(aantal_check_outs-aantal_check_ins), delta_color="normal")
 
 ## Toon reizen in Nederland 2
+#Totaal aantal reizen
 aantal_reizen = journeys_df.shape[0]
-query = f"check_in != '0' and check_in not in {stations_buiten_nl} and check_uit != 0 and check_uit not in {stations_buiten_nl}"
+
+# Aantal reizen volledig binnen Nederland
+query = f"check_in not in {stations_buiten_nl} and check_uit not in {stations_buiten_nl}"
 aantal_reizen_NL = journeys_df.query(query).shape[0]
-query = f"(check_in != '0' and check_in in {stations_buiten_nl} and check_uit != '0' and check_uit not in {stations_buiten_nl}) or (check_in != '0' and check_in not in {stations_buiten_nl} and check_uit != '0' and check_uit in {stations_buiten_nl})"
+
+# Aantal grensoverschrijdende reizen
+query = f"(check_in in {stations_buiten_nl} or check_uit in {stations_buiten_nl})"
 aantal_reizen_grensoverschrijdend = journeys_df.query(query).shape[0]
+
 
 st.subheader("1. Reizen in Nederland en internationaal")
 reizen, reis_in, reis_uit = st.columns(3)
@@ -68,7 +74,47 @@ plt.title("Verdeling reizen")
 st.pyplot(fig)
 
 # # Toon de lopers
-st.subheader("3. Verdeling type tickets")
+st.subheader("2. Gebruik stations als looproute")
+no_journey = journeys_df.query("check_in == check_uit").shape[0]
+
+#Toon het totaal aantal reizen en lopers in een bar chart
+display, text = st.columns(2)
+text.write(f"Van de {aantal_reizen} reizen zijn die er worden gemaakt zijn er {no_journey} reizen waarbij de check-in en check-out hetzelfde station is. Dit zijn passanten, die gebruiken het station als looproute.")
+text.write("De overige reizen zijn reizen waarbij de check-in en check-out op verschillende stations zijn.")
+
+reizigers, passanten = display.columns(2)
+reizigers.metric(label="reizigers", value=aantal_reizen-no_journey, delta=None, delta_color="normal")
+passanten.metric(label="passanten", value=no_journey, delta=None, delta_color="normal")
+reizigers.metric(label="van alle poortscans zijn", value=f"{round((aantal_reizen-no_journey)/aantal_reizen * 100,3)}%", delta=None, delta_color="normal")
+passanten.metric(label="en zijn", value=f"{round(no_journey/aantal_reizen*100,3)}%", delta=None, delta_color="normal")
+reizigers.write("van reizigers")
+passanten.write("van passanten")
+
+# # Toon top 10 drukste stations in Nederland
+st.subheader("3. De drukste stations in Nederland")
+topx = st.slider("Aantal stations", 1, 100, 10, on_change=None)
+st.write(f"De {topx} drukste stations in Nederland gebaseerd op het aantal reizigers op het aantal check-ins en check-outs.")
+stations_nl_df.sort_values(by='passenger_count', ascending=False, inplace=True)
+
+station_table_data = []
+
+for i in range(len(stations_nl_df)):
+    if not stations_nl_df.iloc[i]['passenger_count'] > 0:
+        continue
+
+    # Voeg station data toe aan de lijst
+    station_table_data.append(
+        {
+            "#": i + 1,
+            "Station": stations_nl_df.iloc[i]['STATION'].capitalize(),
+            "Reizigers": int(stations_nl_df.iloc[i]['passenger_count']),
+            "Check-ins": int(stations_nl_df.iloc[i]['passengers_in']),
+            "Check-uits": int(stations_nl_df.iloc[i]['passengers_out'])
+        }
+    )
+st.data_editor(data=station_table_data[:topx])
+
+st.subheader("4. Verdeling type tickets")
 # splits de ticket types uit.
 transactions_b = transactions_df.query("`TICKET TYPE` == 'B'").shape[0]
 transactions_e = transactions_df.query("`TICKET TYPE` == 'E' or `TICKET TYPE` == 'Enkel'").shape[0]
@@ -94,32 +140,8 @@ fig, ax = plt.subplots()
 ax.pie(values, labels=labels, colors=colors, startangle=90, wedgeprops={'width':0.4})
 ax.set(aspect="equal")
 
-plt.title("Verdering ticket types")
+plt.title("Verdeling ticket types")
 
 st.pyplot(fig)
-
-# # Toon top 10 drukste stations in Nederland
-st.subheader("3. De drukste stations in Nederland")
-topx = st.slider("Aantal stations", 1, 100, 10, on_change=None)
-st.write(f"De {topx} drukste stations in Nederland gebaseerd op het aantal reizigers op het aantal check-ins en check-outs.")
-stations_nl_df.sort_values(by='passenger_count', ascending=False, inplace=True)
-
-station_table_data = []
-
-for i in range(len(stations_nl_df)):
-    if not stations_nl_df.iloc[i]['passenger_count'] > 0:
-        continue
-
-    # Voeg station data toe aan de lijst
-    station_table_data.append(
-        {
-            "#": i + 1,
-            "Station": stations_nl_df.iloc[i]['STATION'].capitalize(),
-            "Reizigers": int(stations_nl_df.iloc[i]['passenger_count']),
-            "Check-ins": int(stations_nl_df.iloc[i]['passengers_in']),
-            "Check-uits": int(stations_nl_df.iloc[i]['passengers_out'])
-        }
-    )
-st.data_editor(data=station_table_data[:topx])
 
 
